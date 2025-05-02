@@ -45,16 +45,17 @@
         <ul id="clickedList"></ul>
     </div>
     <div id="searchBox">
-        <input id="microSearch" type="text" placeholder="Search micro-region..." >
-        <button id="addBtn">Add</button>
+        <input id="microSearch" type="text" placeholder="Search micro-code..." >
+        <button id="addBtn">Add to Pool</button>
         <div id="searchSuggestions"></div>
+        <div id="poolTitle">Selected Pool</div>
         <div id="searchPool"></div>
     </div>
 
 
     <div style="margin: 16px 0;">
-        <button id="genLineBtn">Generate Line Graph</button>
-        <button id="clearLineBtn" style="margin-left:8px;">Remove All Graphs</button>
+        <button id="genLineBtn">Generate Line Graph From The Pool</button>
+        <button id="clearLineBtn" style="margin-left:8px;">Remove All Graphs Below</button>
     </div>
 
     <div id="lineControls" class="line-controls"></div>
@@ -68,18 +69,6 @@
     <script src="script.js"></script>
 
 
-    <div id="tooltip" style="
-    position: absolute;
-    background: white;
-    border: 1px solid #ccc;
-    padding: 6px 10px;
-    border-radius: 4px;
-    font-size: 12px;
-    pointer-events: none;
-    display: none;
-    box-shadow: 0 2px 8px rgba(0,0,0,0.2);
-    max-width: 250px;
-    white-space: pre-wrap;
-    "></div>
+    <div id="tooltip"></div>
 </body>
 </html>

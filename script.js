@@ -25,6 +25,8 @@ const top10Charts = {};
 
 const clickedHistory = [];
 
+let currentData = {};
+
 // 4) 异步加载 GeoJSON + CSV
 Promise.all([
     d3.json("data/brazil_microregions_simplified_v3.geojson"),
@@ -44,6 +46,14 @@ Promise.all([
 ]).then(([geo, data]) => {
     geoData = geo;
     dengueData = data;
+
+    const dataByWeekAndCode = d3.rollup(
+        dengueData,
+        v => v[0],
+        d => d.week_id,
+        d => d.micro_code
+    );
+    window.dataByWeekAndCode = dataByWeekAndCode;
     
     const microMeta = {};
     geoData.features.forEach(f => {
@@ -54,7 +64,7 @@ Promise.all([
         };
     });
 
-    // 然后你可以定义一个辅助函数，用在条形图或 tooltip 里：
+    // helper func for code, name, state
     function getRegionLabel(code) {
         const m = microMeta[code] || {};
         return `${code}: ${m.name || ""} (${m.state || ""})`;
@@ -256,6 +266,19 @@ function renderAllSelectedMaps(selectedFeatures, week, enableTrasition = false) 
                     // }
 
                     renderClickHistory();
+                })
+                .on("mouseover", (event,d) => {
+                    window.lastHoveredCode = d.properties.CD_MICRO;
+                    window.lastHoveredPos  = { x: event.pageX, y: event.pageY };
+                    updateTooltip(event, d);
+                })
+                .on("mousemove", (event,d) => {
+                    window.lastHoveredPos = { x: event.pageX, y: event.pageY };
+                    updateTooltip(event, d);
+                })
+                .on("mouseout", () => {
+                    window.lastHoveredCode = null;
+                    d3.select("#tooltip").style("display", "none");
                 });
             
             drawLegend(svg, feature);
@@ -288,6 +311,14 @@ function renderAllSelectedMaps(selectedFeatures, week, enableTrasition = false) 
         //                     return color((currentData[code] || {})[feature] || 0);
         //                 });
     });
+
+    if (window.lastHoveredCode) {
+        // find the feature object for that code
+        const f = geoData.features.find(f => f.properties.CD_MICRO === window.lastHoveredCode);
+        // simulate an event at the last mouse position
+        const pseudoEvent = { pageX: window.lastHoveredPos.x, pageY: window.lastHoveredPos.y };
+        updateTooltip(pseudoEvent, f);
+    }
 
     updateTop10Histograms(selectedFeatures, week);
 }
@@ -823,8 +854,10 @@ d3.select("#genLineBtn").on("click", () => {
         const allFeatures = Object.keys(dengueData[0])
                                     .filter(k => k !== "week_id" && k !== "micro_code");
         allFeatures.forEach((feature, i) => {
+            const chkId = `linechartCheckbox-${feature}`;
             const lbl = controls.append("label");
             lbl.append("input")
+                .attr("id", chkId)
                 .attr("type","checkbox")
                 .attr("value",feature)
                 .property("checked", feature === "dengue");
@@ -953,30 +986,6 @@ function updateLineCharts() {
 
         const yAxis = d3.axisLeft(y).ticks(4);
 
-    // 画坐标轴
-    // svg.append("g")
-    //   .attr("transform", `translate(0,${h - margin.bottom})`)
-    //   .call(xAxis);
-
-    // svg.append("g")
-    //   .attr("transform", `translate(${margin.left},0)`)
-    //   .call(yAxis);
-
-    // // 折线生成器
-    // const lineGen = d3.line()
-    //   .x(d => x(d.week))
-    //   .y(d => y(d.value));
-
-    // // 画每条 region 折线
-    // regions.forEach(code => {
-    //   svg.append("path")
-    //     .datum(dataByRegion[code])
-    //     .attr("fill", "none")
-    //     .attr("stroke", color(code))
-    //     .attr("stroke-width", 1.2)
-    //     .attr("d", lineGen);
-    // });
-
         const g = svg.append("g").attr("transform", `translate(15,0)`);
 
         g.append("g")
@@ -1001,7 +1010,6 @@ function updateLineCharts() {
         });
 
 
-        // 标题
         svg.append("text")
         .attr("x", w / 2)
         .attr("y", margin.top - 10)
@@ -1041,13 +1049,42 @@ function setupYearTicks(weeks) {
 }
 
 
-function updateTooltip(event, d, currentData) {
-    const code   = d.properties.CD_MICRO;
-    const info   = microMeta[code] || {};
-    const record = currentData[code];
+// function updateTooltip(event, d, currentData) {
+//     const code   = d.properties.CD_MICRO;
+//     const info   = microMeta[code] || {};
+//     const record = currentData[code];
 
-    const year = Math.floor(window.currentWeekId / 100);
-    const week = window.currentWeekId % 100;
+//     const year = Math.floor(window.currentWeekId / 100);
+//     const week = window.currentWeekId % 100;
+
+//     let html = `<strong>${code}</strong> ${info.name} (${info.state})<br>`;
+//     html += `<em>Year:</em> ${year}, <em>Week:</em> ${week}`;
+    
+//     if (record) {
+//         html += "<br><br>" + Object.entries(record)
+//         .filter(([k]) => k!=="micro_code" && k!=="week_id")
+//         .map(([k,v]) => `${abbFeatureName(k)}: ${v.toFixed(2)}`)
+//         .join("<br>");
+//     }
+
+//     d3.select("#tooltip")
+//         .html(html)
+//         .style("display", "block")
+//         .style("left", `${event.pageX + 10}px`)
+//         .style("top",  `${event.pageY + 10}px`);
+// }
+
+
+function updateTooltip(event, d) {
+    const code = d.properties.CD_MICRO;
+    const info = microMeta[code] || {};
+
+    const weekId = window.currentWeekId;
+
+    const year = Math.floor(weekId / 100);
+    const week = weekId % 100;
+
+    const record =  window.dataByWeekAndCode.get(weekId)?.get(code);
 
     let html = `<strong>${code}</strong> ${info.name} (${info.state})<br>`;
     html += `<em>Year:</em> ${year}, <em>Week:</em> ${week}`;
@@ -1062,6 +1099,6 @@ function updateTooltip(event, d, currentData) {
     d3.select("#tooltip")
         .html(html)
         .style("display", "block")
-        .style("left", `${event.pageX + 10}px`)
-        .style("top",  `${event.pageY + 10}px`);
+        .style("left",  (window.lastHoveredPos.x + 10) + "px")
+        .style("top",   (window.lastHoveredPos.y + 10) + "px");
 }

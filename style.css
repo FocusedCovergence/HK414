@@ -128,6 +128,17 @@ svg {
   padding:4px 8px
 }
 
+#searchBox {
+  width: 50%;
+  /* display: flex; */
+  gap: 8px;
+}
+
+#poolTitle{
+  margin-top: 5px;
+  font-size: larger;
+}
+
 #searchSuggestions{
   border:1px solid #ccc;
   max-height:120px;
@@ -206,4 +217,18 @@ svg {
   margin-bottom: 20px;
   margin-top: 10px;
   width: 100%;
+}
+
+#tooltip{
+  position: absolute;
+  background: white;
+  border: 1px solid #ccc;
+  padding: 6px 10px;
+  border-radius: 4px;
+  font-size: 12px;
+  pointer-events: none;
+  display: none;
+  box-shadow: 0 2px 8px rgba(0,0,0,0.2);
+  max-width: 250px;
+  white-space: pre-wrap;
 }
