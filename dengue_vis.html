@@ -7,7 +7,17 @@
     <link rel="stylesheet" href="style.css">
 </head>
 <body>
-
+    <div id="title">HK 414 Dengue In Brazil</div>
+    <div id="intro">
+        <p style="font-weight: bold;">Part 1: Select the features you want to visualize 
+            below to observe their distribution on the map, 
+            click the play button below or drag the progress bar to 
+            observe the changes of features over time.
+        </p>
+        <p style="font-weight: bold;">You can click the "Show Top 10 Regions" button to 
+            view bar charts of the top 10 regions for the currently selected features.
+        </p>
+    </div>
     <div id="featureChecks" style="margin-bottom: 10px;"></div>
     <div id="map-container" style="display: flex; flex-wrap: wrap; gap: 20px;"></div>
 
@@ -15,14 +25,61 @@
     <div id="map"></div> -->
 
     <div class="slider-container">
-        <label for="weekSlider">Year: <span id="yearLabel">0</span> Week: <span id="weekLabel">0</span> </label>
+        <label>Year: <span id="yearLabel">0</span> Week: <span id="weekLabel">0</span> </label>
         <!-- <input type="range" id="weekSlider" style="width: 100%;"> -->
         <div id="progressBarWrapper">
             <div id="progressBarFill"></div>
         </div>
+        <div id="progressYearTicks" style="width:100%;height:14px;margin-top:4px;position:relative;"></div>
         <button id="playButton">▶</button>
     </div>
 
+
+    <button id="toggleTop10Btn">Show Top 10 Regions</button>
+    <div id="top10Container" class="map-container" style="display: none;"></div>
+
+    <div class="divider"></div>
+
+    <div id="recommandPlace">
+        <h3>Micro-regions You've Clicked (latest 50):</h4>
+        <ul id="clickedList"></ul>
+    </div>
+    <div id="searchBox">
+        <input id="microSearch" type="text" placeholder="Search micro-region..." >
+        <button id="addBtn">Add</button>
+        <div id="searchSuggestions"></div>
+        <div id="searchPool"></div>
+    </div>
+
+
+    <div style="margin: 16px 0;">
+        <button id="genLineBtn">Generate Line Graph</button>
+        <button id="clearLineBtn" style="margin-left:8px;">Remove All Graphs</button>
+    </div>
+
+    <div id="lineControls" class="line-controls"></div>
+    <div id="lineLegend" class="line-legend"></div>
+    <div id="lineChartContainer" class="line-chart-container"></div>
+
+    <div class="chartGraph">
+
+    </div>
+    <script src="searchbox.js"></script>
     <script src="script.js"></script>
+
+
+    <div id="tooltip" style="
+    position: absolute;
+    background: white;
+    border: 1px solid #ccc;
+    padding: 6px 10px;
+    border-radius: 4px;
+    font-size: 12px;
+    pointer-events: none;
+    display: none;
+    box-shadow: 0 2px 8px rgba(0,0,0,0.2);
+    max-width: 250px;
+    white-space: pre-wrap;
+    "></div>
 </body>
 </html>
