@@ -8,12 +8,6 @@ const svg = d3.select("#map").append("svg")
 // 2) 变量声明
 let geoData, dengueData;
 
-// 3) 颜色比例尺
-const colorScale = d3.scaleSequential(d3.interpolateReds)
-                    .domain([0, 500]);  // dengue 值大概在 0~500 之间
-
-
-
 // const baseColors = d3.range(0, 10).map(i => d3.interpolateRainbow(i/10));
 
 let currentIdx = 0;
@@ -26,6 +20,10 @@ let subInterval = null;
 const zoomTransforms = {};
 
 let skipSmoothOnce = false;
+
+const top10Charts = {};
+
+const clickedHistory = [];
 
 // 4) 异步加载 GeoJSON + CSV
 Promise.all([
@@ -46,7 +44,31 @@ Promise.all([
 ]).then(([geo, data]) => {
     geoData = geo;
     dengueData = data;
+    
+    const microMeta = {};
+    geoData.features.forEach(f => {
+        const { CD_MICRO, NM_MICRO, SIGLA } = f.properties;
+        microMeta[CD_MICRO] = {
+        name: NM_MICRO,
+        state: SIGLA
+        };
+    });
 
+    // 然后你可以定义一个辅助函数，用在条形图或 tooltip 里：
+    function getRegionLabel(code) {
+        const m = microMeta[code] || {};
+        return `${code}: ${m.name || ""} (${m.state || ""})`;
+    }
+
+    // 保存到全局，后面 updateTop10Histograms、renderAllSelectedMaps 都能用
+    window.microMeta = microMeta;
+    window.getRegionLabel = getRegionLabel;
+
+    initMicroRegionSearch({
+        microMeta: window.microMeta,
+        maxSuggestions: 10,
+        maxPool: 5
+    });
 
     // 提取 feature 列表（除 week_id, micro_code）
     const allFeatures = Object.keys(data[0]).filter(k => k !== "week_id" && k !== "micro_code");
@@ -72,6 +94,16 @@ Promise.all([
                                 .domain(domain)
                                 .range(stops);
     });
+
+    const legendData = {};
+    allFeatures.forEach(feature => {
+        const scale = featureScales[feature];
+        legendData[feature] = {
+            domain: scale.domain(),   // [min, t1, t2, t3, t4, max]
+            colors: scale.range()     // 对应的 6 色渐变数组
+        };
+    });
+    window.legendData = legendData;
 
     // color by value
     // allFeatures.forEach((feature, i) => {
@@ -104,7 +136,7 @@ Promise.all([
         .enter()
         .append("label")
         .style("margin-right", "12px")
-        .html(d => `<input type="checkbox" name="feature" value="${d}"> ${d}`);
+        .html(d => `<input type="checkbox" name="feature" value="${d}"> ${abbFeatureName(d)}`);
 
 
 
@@ -122,21 +154,8 @@ Promise.all([
 
     setupCustomProgressBar(weeks, renderAllSelectedMaps);
 
-    // d3.select("#weekSlider")
-    //     .attr("min", 0)
-    //     .attr("max", weeks.length - 1)
-    //     .attr("value", 0)
-    //     .on("input", function() {
-    //         const idx = +this.value;
-    //         const realWeek = weeks[idx];
-    //         d3.select("#weekLabel").text(realWeek);
-    //         const selected = d3.selectAll("#featureChecks input")
-    //                             .filter(function () { return this.checked; })
-    //                             .nodes()
-    //                             .map(n => n.value);
+    setupYearTicks(weeks);
 
-    //         renderAllSelectedMaps(selected, realWeek);
-    //     });
 
     const yearWeekList = calculateWeek(weeks[0]);
     d3.select("#yearLabel").text(yearWeekList[0]);
@@ -148,78 +167,13 @@ Promise.all([
 });
 
 
-// function renderAllSelectedMaps(selectedFeatures, week) {
-//     const container = d3.select("#map-container");
-//     container.selectAll("*").remove();  // 清空所有旧图层
-
-//     const currentData = Object.fromEntries(
-//         dengueData.filter(d => d.week_id === week)
-//                   .map(d => [d.micro_code, d])
-//     );
-
-//     selectedFeatures.forEach(feature => {
-//         const mapDiv = container.append("div")
-//             .attr("class", "vis-block")
-//             .style("width", "calc(25% - 20px)")  // 每行最多 4 个
-//             .style("min-width", "250px");
-
-//         mapDiv.append("div")
-//             .text(feature)
-//             .style("font-weight", "bold")
-//             .style("margin-bottom", "5px");
-
-//         const svg = mapDiv.append("svg")
-//             .attr("width", width)
-//             .attr("height", height);
-
-//         const g = svg.append("g");
-
-//         svg.node().__feature__ = feature;
-
-//         const zoomBehavior = makeZoomBehavior(feature, g);
-//         svg.call(zoomBehavior);
-
-//         if (zoomTransforms[feature]) {
-//             svg.transition().duration(0).call(zoomBehavior.transform, zoomTransforms[feature]);
-//         }
-
-//         const projection = d3.geoMercator().fitSize([width, height], geoData);
-
-//         // const projection = d3.geoMercator()
-//         //                     .scale(180)
-//         //                     .translate([width / 2, height / 1.8]);
-
-//         const path = d3.geoPath().projection(projection);
-
-//         // const color = d3.scaleSequential(d3.interpolateReds)
-//         //     .domain([0, d3.max(Object.values(currentData).map(d => +d[feature])) || 1]);
-
-//         // const color = featureScales[feature];
-//         const color = window.featureScales[feature];
-
-//         g.selectAll("path")
-//             .data(geoData.features)
-//             .enter()
-//             .append("path")
-//             .attr("d", path)
-//             .attr("fill", d => {
-//                 const code = d.properties.CD_MICRO;
-//                 const val = currentData[code]?.[feature] || 0;
-//                 return color(val);
-//             })
-//             .attr("stroke", "#999")
-//             .attr("stroke-width", 0.5)
-//             .attr("fill-opacity", 0.85);
-//     });
-
-
-
-// }
 
 
 const mapGroups = {};  
 
 function renderAllSelectedMaps(selectedFeatures, week, enableTrasition = false) {
+    window.currentWeekId = week;
+
     const container = d3.select("#map-container");
 
     Object.keys(mapGroups).forEach(feature => {
@@ -244,7 +198,7 @@ function renderAllSelectedMaps(selectedFeatures, week, enableTrasition = false) 
                 .attr("id", `map-${feature}`)
                 .attr("class", "vis-block")
                 .style("flex", "1 1 calc(25% - 20px)")
-                .style("max-width", "900px")
+                .style("max-width", "670.34px")
                 .style("min-width", "250px");
 
             const featureName = abbFeatureName(feature)
@@ -273,6 +227,7 @@ function renderAllSelectedMaps(selectedFeatures, week, enableTrasition = false) 
                                 
             const projection = d3.geoMercator().fitSize([width, height], geoData);
             const pathGen = d3.geoPath().projection(projection);
+
             const paths = g.selectAll("path")
                 .data(geoData.features, d => d.properties.CD_MICRO)
                 .enter()
@@ -284,11 +239,28 @@ function renderAllSelectedMaps(selectedFeatures, week, enableTrasition = false) 
                 .classed("micro_region", true)
                 .on("click", (event,d) => {
                     if (event.defaultPrevented) return;
-                    console.log("Clicked:", d.properties.CD_MICRO);
-                });
+                    // console.log("Clicked:", d.properties.CD_MICRO);
+                    const code = d.properties.CD_MICRO;
+                    const info = microMeta[code];
 
+                    // 如果已有，先移除再添加到最前面
+                    const existingIdx = clickedHistory.findIndex(e => e.code === code);
+                    if (existingIdx !== -1) {
+                        clickedHistory.splice(existingIdx, 1);
+                    }
+                    clickedHistory.unshift({ code, ...info });
+
+                    // 保持最多 10 个
+                    // if (clickedHistory.length > 10) {
+                    //     clickedHistory.pop();
+                    // }
+
+                    renderClickHistory();
+                });
+            
+            drawLegend(svg, feature);
             // 记下来以便后面只更新 fill
-            mapGroups[feature] = { g, paths };
+            mapGroups[feature] = {g, paths};
         }
 
         // 2) 更新这张图的 fill
@@ -316,7 +288,161 @@ function renderAllSelectedMaps(selectedFeatures, week, enableTrasition = false) 
         //                     return color((currentData[code] || {})[feature] || 0);
         //                 });
     });
+
+    updateTop10Histograms(selectedFeatures, week);
 }
+
+
+
+// function renderAllSelectedMaps(selectedFeatures, week, enableTransition = false) {
+//   // 每次渲染都更新全局 currentWeekId
+//   window.currentWeekId = week;
+
+//   const container = d3.select("#map-container");
+
+//   // 1) 删除已取消的 map 块
+//   Object.keys(mapGroups).forEach(feature => {
+//     if (!selectedFeatures.includes(feature)) {
+//       container.select(`#map-${feature}`).remove();
+//       delete mapGroups[feature];
+//     }
+//   });
+
+//   // 2) 构建当前周的数据查表，便于快速查 record
+//   const currentData = Object.fromEntries(
+//     dengueData
+//       .filter(d => d.week_id === week)
+//       .map(d => [d.micro_code, d])
+//   );
+
+//   selectedFeatures.forEach(feature => {
+//     let g;
+
+//     // 3) 首次初始化 DOM
+//     if (!mapGroups[feature]) {
+//       const mapDiv = container.append("div")
+//         .attr("id", `map-${feature}`)
+//         .attr("class", "vis-block")
+//         .style("flex", "1 1 calc(25% - 20px)")
+//         .style("max-width", "670.34px")
+//         .style("min-width", "250px");
+
+//       mapDiv.append("div")
+//         .text(abbFeatureName(feature))
+//         .style("font-weight", "bold")
+//         .style("margin-bottom", "5px");
+
+//       const svg = mapDiv.append("svg")
+//         .attr("width", width)
+//         .attr("height", height);
+
+//         const g = svg.append("g");
+//         const zoomBehavior = makeZoomBehavior(feature, g);
+//         svg.call(zoomBehavior);
+
+//     //   svg.call(makeZoomBehavior(feature, svg.append("g")));
+
+
+//       // restore zoom if any
+//       if (zoomTransforms[feature]) {
+//         svg.call(d3.zoom().transform, zoomTransforms[feature]);
+//       }
+
+//       const projection = d3.geoMercator().fitSize([width, height], geoData);
+//       const pathGen = d3.geoPath().projection(projection);
+
+//     //   g = svg.append("g");
+
+//       // enter(): 只做一次 append path
+//       g.selectAll("path")
+//         .data(geoData.features, d => d.properties.CD_MICRO)
+//         .enter().append("path")
+//           .attr("d", pathGen)
+//           .attr("stroke", "#999")
+//           .attr("stroke-width", 0.5)
+//           .attr("fill-opacity", 0.85)
+//           .classed("micro_region", true)
+//           .on("click", (event, d) => {
+//             if (event.defaultPrevented) return;
+//             const code = d.properties.CD_MICRO;
+//             const info = microMeta[code];
+//             const idx = clickedHistory.findIndex(e => e.code === code);
+//             if (idx !== -1) clickedHistory.splice(idx, 1);
+//             clickedHistory.unshift({ code, ...info });
+//             if (clickedHistory.length > 50) clickedHistory.pop();
+//             renderClickHistory();
+//           });
+
+//       drawLegend(svg, feature);
+
+//       // 存一下 g，以后复用
+//       mapGroups[feature] = g;
+//     } else {
+//       g = mapGroups[feature];
+//     }
+
+//     // 4) 更新颜色
+//     const color = featureScales[feature];
+//     const paths = g.selectAll("path");
+//     if (enableTransition) {
+//       paths.transition().duration(500)
+//         .attr("fill", d => {
+//           const code = d.properties.CD_MICRO;
+//           return color((currentData[code] || {})[feature] || 0);
+//         });
+//     } else {
+//       paths.attr("fill", d => {
+//         const code = d.properties.CD_MICRO;
+//         return color((currentData[code] || {})[feature] || 0);
+//       });
+//     }
+
+//     // 5) 重新绑定 tooltip 事件 —— 始终用 currentData[code]，不会锁死在某一帧
+//     paths
+//         .on("mouseover", (event,d) => {
+//             window.lastHoveredCode = d.properties.CD_MICRO;            // ← 记录当前 hover code
+//             window.lastHoveredPos  = { x: event.pageX, y: event.pageY }; // ← 记录坐标
+//             updateTooltip(event, d, currentData);                       // ← 第一次 render
+//         })
+//         .on("mousemove", (event,d) => {
+//             window.lastHoveredPos = { x: event.pageX, y: event.pageY }; // 更新位置
+//             updateTooltip(event, d, currentData);                       // 继续 render
+//         })
+//         .on("mouseout", () => {
+//             window.lastHoveredCode = null;                              // 清空
+//             d3.select("#tooltip").style("display", "none");
+//         });
+//   });
+//   if (window.lastHoveredCode) {
+//     // 构造一个“虚拟”的 d 和 event
+//     const pseudoD     = { properties: { CD_MICRO: window.lastHoveredCode } };
+//     const pseudoEvent = {
+//       pageX: window.lastHoveredPos.x,
+//       pageY: window.lastHoveredPos.y
+//     };
+
+
+//     updateTooltip(pseudoEvent, pseudoD, Object.fromEntries(
+//       dengueData
+//         .filter(d => d.week_id === week)
+//         .map(d => [d.micro_code, d])
+//     ));
+
+//     // setTimeout(() => {
+//     //     updateTooltip(pseudoEvent, pseudoD, Object.fromEntries(
+//     //         dengueData
+//     //             .filter(d => d.week_id === week)
+//     //             .map(d => [d.micro_code, d])
+//     //     ));
+//     // }, 50);
+
+//   }
+
+//   // 6) 更新 Top10
+//   updateTop10Histograms(selectedFeatures, week);
+// }
+
+
 
 function setupFeatureCheckboxListener(weeks, renderAllSelectedMaps) {
     d3.selectAll("#featureChecks input").on("change", function () {
@@ -333,7 +459,7 @@ function setupFeatureCheckboxListener(weeks, renderAllSelectedMaps) {
 
 function makeZoomBehavior(feature, g) {
     return d3.zoom()
-        .scaleExtent([0.5, 8])
+        .scaleExtent([0.45, 8])
         .on("zoom", (event) => {
             g.attr("transform", event.transform);
             zoomTransforms[feature] = event.transform;
@@ -525,17 +651,417 @@ function calculateWeek(passedWeek){
 
 function abbFeatureName(name){
     const nameMap = {
-        dengue: "Num of Dengue Cases",
+        dengue: "Num Dengue Cases",
         pressure: "Pressure",
         rainy_days: "Num Rainy Days",
         precipitation: "Precipitation",
         temperature_max: "Max Temperature",
         temperature_min: "Min Temperature",
         wind_speed: "Wind Speed",
-        temperature_mean: "Temperature Avg",
+        temperature_mean: "Avg Temperature",
         humidity: "Humidity",
-        ndvi: "Normalized Difference Vegetation Index (NDVI)"
+        ndvi: "Normalized Difference Vegetation Index"
     };
 
     return nameMap[name] || "UNKNOWN";
+}
+
+
+d3.select("#toggleTop10Btn").on("click", () => {
+    const container = d3.select("#top10Container");
+    const visible = container.style("display") !== "none";
+    container.style("display", visible ? "none" : "flex");
+    d3.select("#toggleTop10Btn").text(visible ? "Show Top 10 Regions" : "Hide Top 10 Regions");
+});
+
+
+function updateTop10Histograms(selectedFeatures, week) {
+    const container = d3.select("#top10Container");
+
+    // 1) 移除不再勾选的 chart block
+    Object.keys(top10Charts).forEach(feature => {
+        if (!selectedFeatures.includes(feature)) {
+            container.select(`#top10-${feature}`).remove();
+            delete top10Charts[feature];
+        }
+    });
+
+    const currentData = dengueData.filter(d => d.week_id === week);
+    const width = 300, height = 250;
+    const margin = { top: 10, right: 60, bottom: 30, left: 160 };
+
+    selectedFeatures.forEach(feature => {
+        // 找到或新建容器 block
+        let block = container.select(`#top10-${feature}`);
+        if (block.empty()) {
+            block = container.append("div")
+                            .attr("id", `top10-${feature}`)
+                            .attr("class", "vis-block")
+                            .style("flex", "1 1 calc(25% - 20px)")
+                            .style("max-width", "335.17px")
+                            .style("min-width", "250px");
+
+            // 缓存这个 block
+            top10Charts[feature] = true;
+        }
+
+        // **先移除旧的 SVG**，再一路重建 title、bars、axis
+        block.select("svg").remove();
+
+        const svg = block.append("svg")
+                        .attr("width", width)
+                        .attr("height", height);
+
+        // 标题
+        svg.append("text")
+            .attr("x", width/2).attr("y", margin.top + 4)
+            .attr("text-anchor", "middle")
+            .style("font-weight", "bold")
+            .text(abbFeatureName(feature));
+
+        const top10 = [...currentData].filter(d => !isNaN(d[feature]))
+                                    .sort((a,b) => b[feature] - a[feature])
+                                    .slice(0,10);
+
+        const x = d3.scaleLinear()
+                    .domain([0, d3.max(top10,d=>d[feature])])
+                    .range([0, width - margin.left - margin.right]);
+
+        const y = d3.scaleBand()
+                    .domain(top10.map(d=>d.micro_code))
+                    .range([margin.top, height - margin.bottom])
+                    .padding(0.1);
+
+        const g = svg.append("g")
+                    .attr("transform", `translate(${margin.left},10)`);
+
+        // bars
+        g.selectAll("rect")
+            .data(top10)
+            .enter().append("rect")
+                    .attr("y", d=>y(d.micro_code))
+                    .attr("height", y.bandwidth())
+                    .attr("width", d=>x(d[feature]))
+                    .attr("fill", d=>featureScales[feature](d[feature] || 0));
+
+        // bar labels
+        g.selectAll(".bar-label")
+            .data(top10)
+            .enter().append("text")
+                    .attr("class","bar-label")
+                    .attr("x", d=>x(d[feature])+4)
+                    .attr("y", d=>y(d.micro_code) + y.bandwidth()/2 + 4)
+                    .text(d=>d[feature].toFixed(1))
+                    .style("font-size","10px");
+
+        // y-axis
+        const yAxis = d3.axisLeft(y)
+                        .tickFormat(d=> getRegionLabel(d));
+        g.append("g").call(yAxis)
+                    .selectAll("text")
+                        .style("font-size","10px");
+    });
+}
+
+
+function renderClickHistory() {
+    const list = d3.select("#clickedList");
+    list.html("");  // 清空旧内容
+
+    // const title = container.append("h3").text("Micro-regions You've Viewed:");
+
+    // const list = container.append("ul");
+
+    clickedHistory.slice(0,50).forEach(entry => {
+        list.append("li").text(
+            `${entry.code} – ${entry.name} (${entry.state})`
+        );
+    });
+}
+
+
+
+function drawLegend(svg, feature) {
+    const { domain, colors } = window.legendData[feature];
+    const legendG = svg.append("g")
+        .attr("class", "legend");
+    const legendWidth = 12;
+    const legendHeight = 120;
+    const steps = domain.length - 1;
+    const stepH = legendHeight / steps;
+    const offsetX = 8;
+    const offsetY = height - legendHeight - 600;
+
+    // 画色块和文字
+    for (let i = 0; i < steps; i++) {
+        legendG.append("rect")
+        .attr("x", offsetX)
+        .attr("y", offsetY + stepH * (steps - i - 1))
+        .attr("width", legendWidth)
+        .attr("height", stepH)
+        .attr("fill", colors[i]);
+
+        legendG.append("text")
+        .attr("x", offsetX + legendWidth + 4)
+        .attr("y", offsetY + stepH * (steps - i - 1) + stepH/2 + 4)
+        .style("font-size", "10px")
+        .text(domain[i].toFixed(1));
+    }
+    // 最上面标 max
+    legendG.append("text")
+        .attr("x", offsetX + legendWidth + 4)
+        .attr("y", offsetY + 4)
+        .style("font-size", "10px")
+        .text(domain[domain.length - 1].toFixed(1));
+}
+
+
+d3.select("#genLineBtn").on("click", () => {
+    // 如果还没生成 checkbox，就生成
+    const controls = d3.select("#lineControls");
+    if (controls.selectAll("input").empty()) {
+        const allFeatures = Object.keys(dengueData[0])
+                                    .filter(k => k !== "week_id" && k !== "micro_code");
+        allFeatures.forEach((feature, i) => {
+            const lbl = controls.append("label");
+            lbl.append("input")
+                .attr("type","checkbox")
+                .attr("value",feature)
+                .property("checked", feature === "dengue");
+            lbl.append("span").text(abbFeatureName(feature));
+        });
+        controls.selectAll("input").on("change", updateLineCharts);
+    }
+    // 画图
+    updateLineCharts();
+});
+
+// 点 “Remove All Graphs” 直接清空 controls + charts
+d3.select("#clearLineBtn").on("click", () => {
+    d3.select("#lineControls").html("");
+    d3.select("#lineChartContainer").html("");
+    d3.select("#lineLegend").html("");
+});
+
+
+function updateLineCharts() {
+    const selectedFeatures = d3.selectAll("#lineControls input:checked").nodes()
+        .map(n => n.value);
+    const regions = window.selectedRegions;
+    const container = d3.select("#lineChartContainer");
+    const legendDiv = d3.select("#lineLegend");
+
+  // —— 1) 容器居中 —— 
+//   container
+//     .style("display", "flex")
+//     .style("flex-wrap", "wrap")
+//     .style("justify-content", "center")
+//     .style("gap", "20px");
+
+  // 清空旧内容
+    legendDiv.html("");
+    container.html("");
+    if (!regions.length || !selectedFeatures.length) return;
+
+    // 统一 color scale
+    const color = d3.scaleOrdinal(d3.schemeCategory10)
+        .domain(regions);
+
+    // 2) 渲染全局 Legend
+    regions.forEach(region => {
+        const item = legendDiv.append("div").attr("class","line-legend-item");
+        item.append("div")
+            .attr("class","line-legend-color")
+            .style("background", color(region));
+        item.append("span").text(region);
+    });
+
+    // 3) 准备数据和比例尺
+    const margin = { top: 30, right: 20, bottom: 30, left: 40 };
+    const w = 320, h = 200;
+
+    // 收集所有周，并排序
+    const allWeeks = Array.from(
+        new Set(
+        dengueData
+            .filter(d => regions.includes(d.micro_code))
+            .map(d => d.week_id)
+        )
+    ).map(Number).sort((a,b)=>a-b);
+
+    // 按 region/week 聚合
+    const byRegionWeek = {};
+    dengueData
+        .filter(d => regions.includes(d.micro_code))
+        .forEach(d => {
+        const code = d.micro_code;
+        if (!byRegionWeek[code]) byRegionWeek[code] = {};
+        const rec = byRegionWeek[code];
+        if (!rec[d.week_id]) rec[d.week_id] = { count: 0 };
+        rec[d.week_id].count++;
+        selectedFeatures.forEach(f => {
+            rec[d.week_id][f] = (rec[d.week_id][f] || 0) + d[f];
+        });
+        });
+
+    // 4) 每个 feature 画一个 small‑multiple
+    selectedFeatures.forEach(feature => {
+        const chartDiv = container.append("div")
+            .attr("class","line-chart")
+            .style("width", "350px")
+            .style("flex", "none");
+
+        const svg = chartDiv.append("svg")
+        .attr("width", w)
+        .attr("height", h);
+
+        // 构造每个 region 的时序平均值数组
+        const dataByRegion = {};
+        regions.forEach(code => {
+        const rec = byRegionWeek[code] || {};
+        dataByRegion[code] = allWeeks.map(week => ({
+            week,
+            value: rec[week]
+                ? rec[week][feature] / rec[week].count
+                : 0
+        }));
+        });
+
+        // x：完整 week_id，tick 只显示年份
+        const x = d3.scaleLinear()
+        .domain(d3.extent(allWeeks))
+        .range([margin.left, w - margin.right]);
+
+        // const xAxis = d3.axisBottom(x)
+        //   .ticks(4)
+        //   .tickFormat(d => Math.floor(d / 100));
+
+        const xAxis = d3.axisBottom(x)
+                        .ticks(4)
+                        .tickFormat(d => {
+                            const s = d.toString();
+                            return s.length >= 4 ? s.slice(0, 4) : s;
+                        });
+
+        // y：根据所有 region 的值来 nice()
+        const allVals = regions.flatMap(code =>
+        dataByRegion[code].map(d => d.value)
+        );
+        const y = d3.scaleLinear()
+        .domain(d3.extent(allVals)).nice()
+        .range([h - margin.bottom, margin.top]);
+
+        const yAxis = d3.axisLeft(y).ticks(4);
+
+    // 画坐标轴
+    // svg.append("g")
+    //   .attr("transform", `translate(0,${h - margin.bottom})`)
+    //   .call(xAxis);
+
+    // svg.append("g")
+    //   .attr("transform", `translate(${margin.left},0)`)
+    //   .call(yAxis);
+
+    // // 折线生成器
+    // const lineGen = d3.line()
+    //   .x(d => x(d.week))
+    //   .y(d => y(d.value));
+
+    // // 画每条 region 折线
+    // regions.forEach(code => {
+    //   svg.append("path")
+    //     .datum(dataByRegion[code])
+    //     .attr("fill", "none")
+    //     .attr("stroke", color(code))
+    //     .attr("stroke-width", 1.2)
+    //     .attr("d", lineGen);
+    // });
+
+        const g = svg.append("g").attr("transform", `translate(15,0)`);
+
+        g.append("g")
+                .attr("transform", `translate(0,${h - margin.bottom})`)
+                .call(xAxis);
+
+        g.append("g")
+                .attr("transform", `translate(${margin.left},0)`)
+                .call(d3.axisLeft(y).ticks(4));
+
+        const lineGen = d3.line()
+                        .x(d => x(d.week))
+                        .y(d => y(d.value));
+
+        regions.forEach(region => {
+            g.append("path")
+                .datum(dataByRegion[region])
+                .attr("fill", "none")
+                .attr("stroke", color(region))
+                .attr("stroke-width", 1.2)
+                .attr("d", lineGen);
+        });
+
+
+        // 标题
+        svg.append("text")
+        .attr("x", w / 2)
+        .attr("y", margin.top - 10)
+        .attr("text-anchor", "middle")
+        .style("font-size","12px")
+        .style("font-weight","bold")
+        .text(abbFeatureName(feature));
+    });
+}
+
+
+function setupYearTicks(weeks) {
+    const yearTicks = d3.select("#progressYearTicks");
+    yearTicks.html(""); // 清空旧内容
+
+    const yearWeekCounts = {
+        2014: 53, 2015: 52, 2016: 52, 2017: 52, 2018: 52,
+        2019: 52, 2020: 53, 2021: 52, 2022: 52, 2023: 52, 2024: 52
+    };
+
+    const totalWeeks = weeks.length;
+    let weekIndex = 0;
+
+    Object.entries(yearWeekCounts).forEach(([year, count]) => {
+        const leftPercent = (weekIndex / (totalWeeks - 1)) * 100;
+
+        yearTicks.append("div")
+            .style("position", "absolute")
+            .style("left", `${leftPercent}%`)
+            .style("transform", "translateX(-50%)")
+            .style("font-size", "10px")
+            .style("color", "#666")
+            .text(year);
+
+        weekIndex += count;
+    });
+}
+
+
+function updateTooltip(event, d, currentData) {
+    const code   = d.properties.CD_MICRO;
+    const info   = microMeta[code] || {};
+    const record = currentData[code];
+
+    const year = Math.floor(window.currentWeekId / 100);
+    const week = window.currentWeekId % 100;
+
+    let html = `<strong>${code}</strong> ${info.name} (${info.state})<br>`;
+    html += `<em>Year:</em> ${year}, <em>Week:</em> ${week}`;
+    
+    if (record) {
+        html += "<br><br>" + Object.entries(record)
+        .filter(([k]) => k!=="micro_code" && k!=="week_id")
+        .map(([k,v]) => `${abbFeatureName(k)}: ${v.toFixed(2)}`)
+        .join("<br>");
+    }
+
+    d3.select("#tooltip")
+        .html(html)
+        .style("display", "block")
+        .style("left", `${event.pageX + 10}px`)
+        .style("top",  `${event.pageY + 10}px`);
 }
