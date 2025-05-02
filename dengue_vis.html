@@ -1,0 +1,28 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Risk Factors of Dengue Infection</title>
+    <script src="https://cdn.jsdelivr.net/npm/d3@7"></script>
+    <link rel="stylesheet" href="style.css">
+</head>
+<body>
+
+    <div id="featureChecks" style="margin-bottom: 10px;"></div>
+    <div id="map-container" style="display: flex; flex-wrap: wrap; gap: 20px;"></div>
+
+    <!-- <h2>Dengue Cases by Microregion</h2>
+    <div id="map"></div> -->
+
+    <div class="slider-container">
+        <label for="weekSlider">Year: <span id="yearLabel">0</span> Week: <span id="weekLabel">0</span> </label>
+        <!-- <input type="range" id="weekSlider" style="width: 100%;"> -->
+        <div id="progressBarWrapper">
+            <div id="progressBarFill"></div>
+        </div>
+        <button id="playButton">▶</button>
+    </div>
+
+    <script src="script.js"></script>
+</body>
+</html>
