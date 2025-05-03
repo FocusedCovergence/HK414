@@ -1,0 +1,99 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Risk Factors of Dengue Infection</title>
+    <script src="https://cdn.jsdelivr.net/npm/d3@7"></script>
+    <link rel="stylesheet" href="style.css">
+</head>
+<body>
+    <div id="title">HK 414 Visualization Risk Features of Dengue In Brazil</div>
+    <div class="intro">
+        <p style="font-weight: bold;">Part 1: Select the features you want to visualize 
+            below to observe their distribution on the map, 
+            click the play button below or drag the progress bar to 
+            observe the changes of features over time. (Black color means missing data)
+        </p>
+        <p style="font-weight: bold;">You can click the "Show Top 10 Regions" button to 
+            view bar charts of the top 10 regions for the currently selected features. (N/A means missing data)
+        </p>
+    </div>
+    <div id="featureChecks" style="margin-bottom: 10px;"></div>
+    <div id="map-container" style="display: flex; flex-wrap: wrap; gap: 20px;"></div>
+
+    <!-- <h2>Dengue Cases by Microregion</h2>
+    <div id="map"></div> -->
+
+    <div class="slider-container">
+        <label>Year: <span id="yearLabel">0</span> Week: <span id="weekLabel">0</span> </label>
+        <!-- <input type="range" id="weekSlider" style="width: 100%;"> -->
+        <div id="progressBarWrapper">
+            <div id="progressBarFill"></div>
+        </div>
+        <div id="progressYearTicks" style="width:100%;height:14px;margin-top:4px;position:relative;"></div>
+        <button id="playButton">▶</button>
+    </div>
+
+
+    <button id="toggleTop10Btn">Show Top 10 Regions</button>
+    <div id="top10Container" class="map-container" style="display: none;"></div>
+
+    <div class="divider"></div>
+
+    <p>There are no components available for interaction in this section. 
+        It is used to record your click history on the map above</p>
+
+    <div id="recommandPlace">
+        <h3>Micro-regions You've Clicked (latest 50):</h4>
+        <ul id="clickedList"></ul>
+    </div>
+
+    <div class="divider"></div>
+
+    <div class="intro">
+        <p style="font-weight: bold;">Part 2: Compare the differences between different regions, 
+            Use the search bar to search the micro-code<br>
+            <ul> You need to enter complete micro-code to press following buttons:
+                <li>Press "Find in Map" will show its location in Part 1 Visualization</li>
+                <li>Press "Add to Pool" will add the region to "Selected Pool"</li>
+            </ul>
+        </p>
+        <p style="font-weight: bold;">When there are at least 1 and less than or equal 
+            to 5 regions in the "Selected Pool", press "Generate Line Graphs From The Pool" to generate 
+            their line charts by time.
+        </p>
+    </div>
+
+
+    <div id="searchBox">
+        <button id="findBtn">Find in Map</button>
+        <div class="input-wrapper">
+            <input id="microSearch" type="text" placeholder="Input micro-code (e.g. 35061)" >
+            <div id="searchSuggestions"></div>
+        </div>
+        <button id="addBtn">Add to Pool</button>
+        <!-- <div id="searchSuggestions"></div> -->
+        <div id="poolTitle">Selected Pool (Up to 5)</div>
+        <div id="searchPool"></div>
+    </div>
+
+
+    <div style="margin: 16px 0;">
+        <button id="genLineBtn">Generate Line Graphs From The Pool</button>
+        <button id="clearLineBtn" style="margin-left:8px;">Remove All Graphs Below</button>
+    </div>
+
+    <div id="lineControls" class="line-controls"></div>
+    <div id="lineLegend" class="line-legend"></div>
+    <div id="lineChartContainer" class="line-chart-container"></div>
+
+    <div class="chartGraph">
+
+    </div>
+    <script src="searchbox.js"></script>
+    <script src="script.js"></script>
+
+
+    <div id="tooltip"></div>
+</body>
+</html>

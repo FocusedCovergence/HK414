@@ -1,0 +1,303 @@
+body {
+  font-family: sans-serif;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  margin: 0;
+  padding: 20px;
+  background-color: #f9f9f9;
+}
+
+#title{
+  font-size: 20pt;
+}
+
+#map {
+  width: 800px;
+  height: 600px;
+}
+
+svg {
+  width: 100%;
+  height: 100%;
+  border: 1px solid #ccc;
+  box-sizing: border-box;
+  border-radius: 6px; 
+}
+
+.region {
+  stroke: #999;
+  stroke-width: 0.5;
+}
+
+.slider-container {
+  margin-top: 30px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  text-align: center;
+  width: 100%;
+  max-width: 1000px;
+}
+
+#weekSlider {
+  transition: all 0.4s ease;
+}
+
+#playButton{
+  margin-top: 5px;
+}
+
+
+#progressBarWrapper {
+  width: 100%;
+  height: 6px;
+  background: #ccc;
+  border-radius: 3px;
+  margin-top: 10px;
+  cursor: pointer;
+  max-width: 1000px;
+}
+
+#progressBarFill {
+  height: 100%;
+  width: 0%;
+  background: #e74c3c;
+  border-radius: 3px;
+  transition: width 0.5s ease;
+}
+
+#toggleTop10Btn{
+  margin-top: 5px;
+}
+
+.vis-block {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  box-sizing: border-box;
+}
+
+.micro_region {
+  cursor: pointer;
+  transition: stroke-width 0.3s ease;
+}
+
+.micro_region:hover {
+  stroke: #000;  
+  stroke-width: 1.2; 
+}
+
+.map-container {
+  margin-top: 40px;
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  text-align: center;
+  gap: 20px;
+}
+
+#recommandPlace {
+  margin-top: 20px;
+  margin-bottom: 20px;
+  padding: 10px 20px;
+  border: 1px solid #ccc;
+  border-radius: 6px;
+  background: #fefefe;
+  max-width: 900px;
+}
+
+
+#clickedList {
+  max-height: 200px;
+  overflow-y: auto;
+  padding-left: 20px;
+  margin-top: 5px;
+  border: 1px solid #ccc;
+  border-radius: 4px;
+  background: #fff;
+}
+
+/* #microSearch{
+  width:60%;
+  padding:4px;
+} */
+
+#addBtn{
+  margin-left:8px;
+  padding:4px 8px
+}
+
+/* #searchBox {
+  width: 50%;
+  gap: 8px;
+} */
+
+
+/* #searchBox {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  /* 可选：限制最大宽度或填满父级 */
+  /* width: 80%;
+  max-width: 600px;
+} */ 
+/* #microSearch {
+  flex: 1;
+  padding: 4px;
+} */
+#findBtn {
+  padding: 4px 8px;
+  cursor: pointer;
+}
+
+#searchBox {
+  display: flex;
+  flex-wrap: wrap;        /* 关键：允许折行 */
+  align-items: center;
+  gap: 8px;
+  width: 80%;
+  max-width: 600px;
+  position: relative;
+  overflow: visible;     /* for 下拉框绝对定位 */
+}
+
+.input-wrapper {
+  position: relative;
+  flex: 1;           /* 输入框 + 下拉撑满按钮之间的剩余空间 */
+  min-width: 120px;  /* 防止太窄 */
+}
+
+/* 2. 强制 poolTitle 和 searchPool 各占整行 */
+#poolTitle,
+#searchPool {
+  flex: 0 0 100%;         /* 宽度 100% 强制换行 */
+  text-align: center;     /* 居中对齐 */
+}
+
+/* 3. 第一行的输入框撑满剩余空间 */
+#microSearch {
+  flex: 1;                /* 填满除了按钮以外的空间 */
+  min-width: 120px;       /* 防止太窄 */
+  width: 100%;
+}
+
+/* 4. 下拉建议定位到输入框下方 */
+#searchSuggestions {
+  display: none;
+  position: absolute;     
+  top: 100%;
+  /* 也可以直接写个固定值，比如 top: 36px; */
+  left: 0;
+  width: 100%;            /* 和输入框等宽 */
+  border: 1px solid #ccc;
+  background: #fff;
+  max-height: 120px;
+  overflow-y: auto;
+  z-index: 1000;            /* 浮在最上层 */
+}
+
+/* #poolTitle{
+  margin-top: 5px;
+  font-size: larger;
+} */
+
+/* #searchSuggestions{
+  border:1px solid #ccc;
+  max-height:120px;
+  overflow-y:auto;
+  display:none;
+  position:relative;
+  background:#fff;
+  margin-top:4px;
+} */
+
+/* #searchPool{
+  display:flex;
+  flex-wrap:wrap;
+  gap:8px;
+  margin-top:10px;
+} */
+
+/* #searchPool {
+  border: 2px solid #333;
+  padding: 8px;
+  border-radius: 4px;
+  min-height: 40px;
+  margin-top: 5px;
+} */
+
+.line-controls {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin: 16px 0;
+}
+
+.line-controls label {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+}
+
+.line-chart-container {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 20px;
+  justify-content: center;
+}
+
+.line-chart {
+  flex: 1 1 calc(25% - 20px);
+  min-width: 200px;
+}
+
+.line-chart svg {
+  width: 100%;
+  max-height: 310.5px;
+}
+
+.line-legend {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 12px;
+  margin: 12px 0;
+}
+.line-legend-item {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+}
+.line-legend-color {
+  width: 12px;
+  height: 12px;
+  border: 1px solid #333;
+  flex-shrink: 0;
+}
+
+.divider {
+  border-top: 5px double #444;
+  margin-bottom: 20px;
+  margin-top: 10px;
+  width: 100%;
+}
+
+#tooltip{
+  position: absolute;
+  background: white;
+  border: 1px solid #ccc;
+  padding: 6px 10px;
+  border-radius: 4px;
+  font-size: 12px;
+  pointer-events: none;
+  display: none;
+  box-shadow: 0 2px 8px rgba(0,0,0,0.2);
+  max-width: 250px;
+  white-space: pre-wrap;
+}
+
+/* nmd 怎么简单他妈的怎么来 */
+.micro_region.highlighted {
+  stroke: #f00 !important;
+  stroke-width: 3px !important;
+}
