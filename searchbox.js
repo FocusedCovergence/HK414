@@ -3,7 +3,7 @@ window.selectedRegions = [];
 function initMicroRegionSearch({
     microMeta,
     maxSuggestions = 10,
-    maxPool = 5   // ← 改为 10，允许最多添加 10 个
+    maxPool = 5  
 }) {
     const pool = [];
     const input   = d3.select("#microSearch");
@@ -11,7 +11,7 @@ function initMicroRegionSearch({
     const sugg    = d3.select("#searchSuggestions");
     const poolDiv = d3.select("#searchPool");
 
-    // === 建议下拉（按前缀优先匹配，再包含匹配） ===
+    // suggestion
     input.on("input", function() {
         const term = this.value.trim().toLowerCase();
         if (!term) {
@@ -19,7 +19,7 @@ function initMicroRegionSearch({
         return sugg.style("display","none");
         }
 
-        // 先筛，再排序，最后取 top N
+
         let entries = Object.entries(microMeta)
         .filter(([code,m]) =>
             code.includes(term) ||
@@ -59,14 +59,12 @@ function initMicroRegionSearch({
         });
     });
 
-    // 点击外部隐藏建议
     d3.select("body").on("click", event => {
         if (!event.target.closest("#searchBox")) {
         sugg.style("display","none");
         }
     });
 
-    // === Add 按钮逻辑 ===
     addBtn.on("click", () => {
         const code = input.property("value").trim();
         if (!microMeta[code])       return alert("Not a valid code.");
@@ -76,7 +74,7 @@ function initMicroRegionSearch({
         renderPool();
     });
 
-    // === 渲染池子（显示 code, name, state） ===
+    // select pool
     function renderPool() {
         poolDiv.html("");
         pool.forEach(code => {
@@ -90,11 +88,10 @@ function initMicroRegionSearch({
                 .style("align-items","center")
                 .style("gap","6px");
 
-            // 显示 code、name、state
             item.append("span")
                 .text(`${code} – ${m.name} (${m.state})`);
 
-            // 删除按钮
+
             item.append("button")
                 .text("Delete")
                 .style("padding","2px 6px")

@@ -128,24 +128,6 @@ svg {
   padding:4px 8px
 }
 
-/* #searchBox {
-  width: 50%;
-  gap: 8px;
-} */
-
-
-/* #searchBox {
-  display: flex;
-  align-items: center;
-  gap: 8px;
-  /* 可选：限制最大宽度或填满父级 */
-  /* width: 80%;
-  max-width: 600px;
-} */ 
-/* #microSearch {
-  flex: 1;
-  padding: 4px;
-} */
 #findBtn {
   padding: 4px 8px;
   cursor: pointer;
@@ -153,48 +135,45 @@ svg {
 
 #searchBox {
   display: flex;
-  flex-wrap: wrap;        /* 关键：允许折行 */
+  flex-wrap: wrap;
   align-items: center;
   gap: 8px;
   width: 80%;
   max-width: 600px;
   position: relative;
-  overflow: visible;     /* for 下拉框绝对定位 */
+  overflow: visible;
 }
 
 .input-wrapper {
   position: relative;
-  flex: 1;           /* 输入框 + 下拉撑满按钮之间的剩余空间 */
-  min-width: 120px;  /* 防止太窄 */
+  flex: 1;
+  min-width: 120px;
 }
 
-/* 2. 强制 poolTitle 和 searchPool 各占整行 */
 #poolTitle,
 #searchPool {
-  flex: 0 0 100%;         /* 宽度 100% 强制换行 */
-  text-align: center;     /* 居中对齐 */
+  flex: 0 0 100%;
+  text-align: center;
 }
 
-/* 3. 第一行的输入框撑满剩余空间 */
+
 #microSearch {
-  flex: 1;                /* 填满除了按钮以外的空间 */
-  min-width: 120px;       /* 防止太窄 */
+  flex: 1;
+  min-width: 120px;
   width: 100%;
 }
 
-/* 4. 下拉建议定位到输入框下方 */
 #searchSuggestions {
   display: none;
   position: absolute;     
   top: 100%;
-  /* 也可以直接写个固定值，比如 top: 36px; */
   left: 0;
-  width: 100%;            /* 和输入框等宽 */
+  width: 100%;
   border: 1px solid #ccc;
   background: #fff;
   max-height: 120px;
   overflow-y: auto;
-  z-index: 1000;            /* 浮在最上层 */
+  z-index: 1000;
 }
 
 /* #poolTitle{
@@ -296,7 +275,7 @@ svg {
   white-space: pre-wrap;
 }
 
-/* nmd 怎么简单他妈的怎么来 */
+
 .micro_region.highlighted {
   stroke: #f00 !important;
   stroke-width: 3px !important;
