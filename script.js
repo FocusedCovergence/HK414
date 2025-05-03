@@ -45,7 +45,7 @@ const featureDomains = {
 
 // 4) 异步加载 GeoJSON + CSV
 Promise.all([
-    d3.json("data/brazil_microregions_simplified_v6.geojson"),
+    d3.json("data/brazil_microregions_simplified_v3.geojson"),
     d3.csv("data/composed_features_new.csv", d => {
         const parsed = {
             week_id: +d.week_id,
