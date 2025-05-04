@@ -1101,5 +1101,6 @@ d3.select("#findBtn").on("click", () => {
     const code = d3.select("#microSearch")
                     .property("value")
                     .trim();
+    if (!microMeta[code]) return alert("Not a valid code.");
     findAndHighlight(code);
 });

@@ -17,6 +17,10 @@ body {
   height: 600px;
 }
 
+.intro{
+  width: 90%;
+}
+
 svg {
   width: 100%;
   height: 100%;
@@ -279,4 +283,10 @@ svg {
 .micro_region.highlighted {
   stroke: #f00 !important;
   stroke-width: 3px !important;
+}
+
+#reference{
+  margin-top: 30px;
+  text-align: left;
+  color: gray;
 }
